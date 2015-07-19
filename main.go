@@ -14,14 +14,16 @@ import (
 	"regexp"
 )
 
-//TODO MORE PROTOCOLS, USE CHECKDNS VERSION
+//TODO MORE PROTOCOLS
 
-type config struct {
+type domain struct {
 	Host, Domain, Password, Protocol, ip, fqdn string
 	getIP                                      chan string
 }
 
-func (c *config) listenIPLoop() {
+var validIP = regexp.MustCompile(`\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b`)
+
+func (c *domain) listenIPLoop() {
 	if c.Host == "@" {
 		c.fqdn = c.Domain + "."
 	} else {
@@ -30,22 +32,24 @@ func (c *config) listenIPLoop() {
 	var dnsIP string
 	dmsg := new(dns.Msg)
 	dmsg.SetQuestion(c.fqdn, dns.TypeA)
-	validIP := regexp.MustCompile(`\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b`)
 	for newIP := range c.getIP {
+		log.Println("checking ip for", c.fqdn)
+		in, err := dns.Exchange(dmsg, "dns1.registrar-servers.com:53")
+		if err != nil {
+			log.Println(err)
+			continue
+		}
+		if len(in.Answer) >= 1 {
+			dnsIP = validIP.FindString(in.Answer[0].String())
+			log.Printf("current ip for %s is %s", c.fqdn, dnsIP)
+		} else {
+			log.Printf("could not find A record for %s", c.fqdn)
+			continue
+		}
 		if newIP != dnsIP {
 			err := c.updateIP(newIP)
 			if err != nil {
 				log.Println(err)
-			}
-			in, err := dns.Exchange(dmsg, "dns1.registrar-servers.com:53")
-			if err != nil {
-				log.Println(err)
-				continue
-			}
-			if len(in.Answer) >= 1 {
-				dnsIP = validIP.FindString(in.Answer[0].String())
-			} else {
-				log.Println("cannot set", c.fqdn)
 			}
 		} else {
 			log.Println(c.fqdn, "up to date")
@@ -53,7 +57,7 @@ func (c *config) listenIPLoop() {
 	}
 }
 
-func (c *config) useProtocol() (r *http.Response, err error) {
+func (c *domain) useProtocol() (r *http.Response, err error) {
 	switch strings.ToLower(c.Protocol) {
 	case "namecheap":
 		r, err = http.Get("https://dynamicdns.park-your-domain.com/update?host=" + c.Host + "&domain=" + c.Domain + "&password=" + c.Password + "&ip=" + c.ip)
@@ -61,7 +65,7 @@ func (c *config) useProtocol() (r *http.Response, err error) {
 	return
 }
 
-func (c *config) checkError(buf []byte, r *http.Response) (errStr string, bad bool) {
+func (c *domain) checkError(buf []byte, r *http.Response) (errStr string, bad bool) {
 	s := (string(buf))
 	if strings.Contains(strings.ToLower(s), "error") {
 		bad = true
@@ -75,12 +79,12 @@ func (c *config) checkError(buf []byte, r *http.Response) (errStr string, bad bo
 			s = s[i+len("<p>") : j]
 
 		}
-		errStr = fmt.Sprintf("could not update status code %d; %s %s", r.StatusCode, c.fqdn, s)
+		errStr = fmt.Sprintf("status code %d; could not update %s; %s", r.StatusCode, c.fqdn, s)
 	}
 	return
 }
 
-func (c *config) updateIP(newIP string) error {
+func (c *domain) updateIP(newIP string) error {
 	log.Println("updating", c.fqdn)
 	r, err := c.useProtocol()
 	if err != nil {
@@ -99,7 +103,7 @@ func (c *config) updateIP(newIP string) error {
 	return nil
 }
 
-func parseConfig() (config configuration) {
+func (config *configuration) parseConfig() {
 	log.Println("reading config.json")
 	f, err := os.Open("config.json")
 	if err != nil {
@@ -107,17 +111,15 @@ func parseConfig() (config configuration) {
 	}
 	log.Println("read config.json")
 	log.Println("parsing config.json")
-	config = configuration{}
 	d := json.NewDecoder(f)
-	err = d.Decode(&config)
+	err = d.Decode(config)
 	if err != nil {
 		log.Fatal(err)
 	}
 	log.Println("parsed config.json")
-	return
 }
 
-func checkIPLoop(config configuration) {
+func (config *configuration)checkIPLoop() {
 	for ;; time.Sleep(time.Second * config.Interval) {
 		log.Println("getting public IP")
 		resp, err := http.Get("http://echoip.com")
@@ -142,20 +144,21 @@ func checkIPLoop(config configuration) {
 }
 
 type configuration struct {
-	List     []*config
+	List     []*domain
 	Interval time.Duration
 }
 
 func main() {
 	log.SetPrefix("goDDNS: ")
-	config := parseConfig()
+	config := configuration{}
+	config.parseConfig()
 	log.Println("launching goroutines")
 	for _, c := range config.List {
 		c.getIP = make(chan string)
 		go c.listenIPLoop()
 	}
 	log.Println("launched goroutines")
-	checkIPLoop(config)
+	config.checkIPLoop()
 }
 
 //example config
@@ -164,9 +167,9 @@ func main() {
 //{
 //"Host": "@",
 //"Domain": "aubble.com",
-//"Password": "PASS",
+//"Password": "PASSWORDHERE",
 //"Protocol": "namecheap"
 //}
 //],
 //"Interval": 20 //seconds
-//}
+//} //REMOVE ALL COMMENTS PLEASE
