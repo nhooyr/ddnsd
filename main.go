@@ -48,10 +48,7 @@ func (c *config) checkError(buf []byte, r *http.Response) (errStr string, bad bo
 		i := strings.Index(s, "<ResponseString>")
 		j := strings.Index(s, "</ResponseString>")
 		s = s[i+len("<ResponseString>") : j]
-		errStr = fmt.Sprintf("could not update %s %s", c.fqdn, s)
-	} else if r.StatusCode < 200 || r.StatusCode > 226 {
-		bad = true
-		errStr = fmt.Sprintf("could not update %s, problem with server, got StatusCode %d", c.fqdn, r.StatusCode)
+		errStr = fmt.Sprintf("could not update %s %s\nstatus code %s", c.fqdn, s, r.StatusCode)
 	}
 	return
 }
