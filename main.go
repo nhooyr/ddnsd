@@ -12,7 +12,7 @@ import (
 	"time"
 )
 
-//TODO MORE PROTOCOLS
+//TODO MORE PROTOCOLS, USE CHECKDNS VERSION
 
 type config struct {
 	IP, Host, Domain, Password, Protocol, fqdn string
@@ -43,12 +43,19 @@ func (c *config) useProtocol() (r *http.Response, err error) {
 
 func (c *config) checkError(buf []byte, r *http.Response) (errStr string, bad bool) {
 	s := (string(buf))
-	if strings.Contains(s, "error") {
+	if strings.Contains(strings.ToLower(s), "error") {
 		bad = true
 		i := strings.Index(s, "<ResponseString>")
-		j := strings.Index(s, "</ResponseString>")
-		s = s[i+len("<ResponseString>") : j]
-		errStr = fmt.Sprintf("could not update %s %s\nstatus code %s", c.fqdn, s, r.StatusCode)
+		if (i != -1) {
+			j := strings.Index(s, "</ResponseString>")
+			s = s[i+len("<ResponseString>") : j]
+		} else {
+			i = strings.Index(s, "<p>")
+			j := strings.Index(s, "</p>")
+			s = s[i+len("<p>") : j]
+
+		}
+		errStr = fmt.Sprintf("could not update status code %d; %s %s", r.StatusCode, c.fqdn, s)
 	}
 	return
 }
@@ -72,17 +79,17 @@ func (c *config) updateIP(newIP string) error {
 	return nil
 }
 
-func parseConfig()(configList []*config){
+func parseConfig() (config configuration) {
 	log.Println("reading config.json")
-	f, err := os.Open("/etc/goDDNS/config.json")
+	f, err := os.Open("config.json")
 	if err != nil {
 		log.Fatal(err)
 	}
 	log.Println("read config.json")
 	log.Println("parsing config.json")
-	configList = []*config{}
+	config = configuration{}
 	d := json.NewDecoder(f)
-	err = d.Decode(&configList)
+	err = d.Decode(&config)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -90,9 +97,9 @@ func parseConfig()(configList []*config){
 	return
 }
 
-func checkIPLoop(configList []*config){
+func checkIPLoop(config configuration) {
 	oldIP := ""
-	for ;; time.Sleep(time.Second * 5) {
+	for ;; time.Sleep(time.Second * config.Interval) {
 		log.Println("getting public IP")
 		resp, err := http.Get("http://echoip.com")
 		if err != nil {
@@ -109,7 +116,7 @@ func checkIPLoop(configList []*config){
 		log.Println("got", newIP)
 		if oldIP != newIP {
 			log.Println("sending IP to goroutines")
-			for _, c := range configList {
+			for _, c := range config.List {
 				c.getIP <- newIP
 			}
 			log.Println("sent IP to goroutines")
@@ -120,14 +127,19 @@ func checkIPLoop(configList []*config){
 	}
 }
 
+type configuration struct {
+	List []*config
+	Interval time.Duration
+}
+
 func main() {
 	log.SetPrefix("goDDNS: ")
-	configList := parseConfig()
+	config := parseConfig()
 	log.Println("launching goroutines")
-	for _, c := range configList {
+	for _, c := range config.List {
 		c.getIP = make(chan string)
 		go c.listenIPLoop()
 	}
 	log.Println("launched goroutines")
-	checkIPLoop(configList)
+	checkIPLoop(config)
 }
