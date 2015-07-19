@@ -77,7 +77,7 @@ func (c *config) updateIP(newIP string) error {
 
 func parseConfig()(configList []*config){
 	log.Println("reading config.json")
-	f, err := os.Open("config.json")
+	f, err := os.Open("/etc/goDDNS/config.json")
 	if err != nil {
 		log.Fatal(err)
 	}
