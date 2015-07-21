@@ -77,18 +77,21 @@ func (d *domain) useProtocol() (r *http.Response, err error) {
 }
 
 func (d *domain) checkError(s string, r *http.Response) (bad bool) {
-	if strings.Contains(strings.ToLower(s), "error") {
-		bad = true
-		i := strings.Index(s, "<ResponseString>")
-		if i != -1 {
-			j := strings.Index(s, "</ResponseString>")
-			s = s[i+len("<ResponseString>") : j]
-		} else {
-			i = strings.Index(s, "<p>")
-			j := strings.Index(s, "</p>")
-			s = s[i+len("<p>") : j]
+	switch strings.ToLower(d.Protocol) {
+	case "namecheap":
+		if strings.Contains(strings.ToLower(s), "error") {
+			bad = true
+			i := strings.Index(s, "<ResponseString>")
+			if i != -1 {
+				j := strings.Index(s, "</ResponseString>")
+				s = s[i+len("<ResponseString>") : j]
+			} else {
+				i = strings.Index(s, "<p>")
+				j := strings.Index(s, "</p>")
+				s = s[i+len("<p>") : j]
+			}
+			log.Printf("status code %d; could not update %s; %s", r.StatusCode, d.fqdn, s)
 		}
-		log.Printf("status code %d; could not update %s; %s", r.StatusCode, d.fqdn, s)
 	}
 	return
 }
