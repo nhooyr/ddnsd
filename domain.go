@@ -3,10 +3,10 @@ package main
 import (
 	"github.com/miekg/dns"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"regexp"
 	"strings"
+	"strconv"
 )
 
 type domain struct {
@@ -92,7 +92,7 @@ func (d *domain) checkError(s string, r *http.Response) (bad bool) {
 				j := strings.Index(s, "</p>")
 				s = s[i+len("<p>") : j]
 			}
-			d.log("status code", r.StatusCode+"; could not update;", d.fqdn+";", s)
+			d.log("status code", strconv.Itoa(r.StatusCode) + "; could not update;", d.fqdn+";", s)
 		}
 	}
 	return
