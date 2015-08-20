@@ -13,6 +13,7 @@ type domain struct {
 	Host, Domain, Password, Protocol, ip, fqdn, dnsIP string
 	getIP                                             chan string
 	dnsMsg                                            *dns.Msg
+	c                                                 *configuration
 }
 
 func (d *domain) listenIPLoop() {
@@ -28,7 +29,7 @@ func (d *domain) listenIPLoop() {
 		if newIP != d.dnsIP {
 			d.updateIP(newIP)
 		} else {
-			log.Println(d.fqdn, "up to date")
+			d.log(d.fqdn, "up to date")
 		}
 	}
 }
@@ -36,36 +37,37 @@ func (d *domain) listenIPLoop() {
 var validIP = regexp.MustCompile(`\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b`)
 
 func (d *domain) checkIP() {
-	log.Println("checking ip for", d.fqdn)
+	d.log("checking ip for", d.fqdn)
 	in, err := dns.Exchange(d.dnsMsg, "dns1.registrar-servers.com:53")
 	if err != nil {
-		log.Println(err)
+		d.log(err)
 		return
 	}
 	if len(in.Answer) >= 1 {
 		d.dnsIP = validIP.FindString(in.Answer[0].String())
-		log.Printf("current ip for %s is %s", d.fqdn, d.dnsIP)
+		d.log("current ip for", d.fqdn, "is", d.dnsIP)
 	} else {
-		log.Println("could not find A record for", d.fqdn)
+		d.log("could not find A record for", d.fqdn)
 	}
 }
 
 func (d *domain) updateIP(newIP string) {
-	log.Println("updating", d.fqdn)
+	d.log("updating", d.fqdn)
 	r, err := d.useProtocol()
 	if err != nil {
-		log.Println(err)
+		d.log(err)
 		return
 	}
 	defer r.Body.Close()
 	buf, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		log.Println(err)
+		d.log(err)
+		return
 	}
 	if bad := d.checkError(string(buf), r); bad {
 		return
 	}
-	log.Println("updated", d.fqdn)
+	d.log("updated", d.fqdn)
 }
 
 func (d *domain) useProtocol() (r *http.Response, err error) {
@@ -90,8 +92,11 @@ func (d *domain) checkError(s string, r *http.Response) (bad bool) {
 				j := strings.Index(s, "</p>")
 				s = s[i+len("<p>") : j]
 			}
-			log.Printf("status code %d; could not update %s; %s", r.StatusCode, d.fqdn, s)
+			d.log("status code", r.StatusCode+"; could not update;", d.fqdn+";", s)
 		}
 	}
 	return
+}
+func (d *domain) log(v ...interface{}) {
+	d.c.logInterface <- append([]interface{}{"-->", d.Domain, "-/"}, v...)
 }

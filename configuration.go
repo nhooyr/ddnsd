@@ -1,6 +1,6 @@
 package main
 
-import(
+import (
 	"encoding/json"
 	"io/ioutil"
 	"log"
@@ -10,45 +10,44 @@ import(
 )
 
 type configuration struct {
-	List     []*domain
-	Interval time.Duration
+	List         []*domain
+	Interval     time.Duration
+	Logfile      string
+	logInterface chan []interface{}
 }
 
 func (c *configuration) parseConfig() {
-	log.Println("reading config.json")
 	f, err := os.Open("config.json")
 	if err != nil {
 		log.Fatal(err)
 	}
-	log.Println("read config.json")
-	log.Println("parsing config.json")
 	d := json.NewDecoder(f)
 	err = d.Decode(c)
 	if err != nil {
 		log.Fatal(err)
 	}
-	log.Println("parsed config.json")
 }
 
 func (c *configuration) checkIPLoop() {
-	for ;; time.Sleep(time.Second * c.Interval) {
+	for ; ; time.Sleep(time.Second * c.Interval) {
 		newIP, err := c.getPublicIP()
 		if err != nil {
-			log.Println(err)
+			c.log(err)
 			continue
 		}
-		log.Println("got", newIP)
-		log.Println("sending IP to goroutines")
+		c.log("got", newIP)
+		c.log("sending IP to goroutines")
 		for _, c := range c.List {
 			c.getIP <- newIP
 		}
-		log.Println("sent IP to goroutines")
+		c.log("sent IP to goroutines")
+		c.log("sleeping checkIPLoop for", int64(c.Interval))
 	}
 }
 
 func (c *configuration) getPublicIP() (string, error) {
-	log.Println("getting public IP")
-	resp, err := http.Get("http://echoip.com")
+	c.log("getting public IP")
+	resp, err := http.Get("https://api.ipify.org")
 	if err != nil {
 		return "", err
 	}
