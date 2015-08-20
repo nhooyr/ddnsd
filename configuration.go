@@ -73,10 +73,10 @@ func (c *configuration) receiveAndLog() {
 			log.SetOutput(logFile)
 			log.Println("--> global -/ beginning logging")
 			for {
-				log.Println(<-c.logInterface...)
 				if _, err = os.Stat(c.Logfile); os.IsNotExist(err) {
 					break
 				}
+				log.Println(<-c.logInterface...)
 			}
 		}
 	}
