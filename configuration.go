@@ -16,8 +16,8 @@ type configuration struct {
 	logInterface chan []interface{}
 }
 
-func (c *configuration) parseConfig() {
-	f, err := os.Open("config.json")
+func (c *configuration) parseConfig(path string) {
+	f, err := os.Open(path)
 	if err != nil {
 		log.Fatal(err)
 	}
