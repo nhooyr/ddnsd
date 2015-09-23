@@ -16,6 +16,7 @@ if no -c flag is given, the default location it looks for is /etc/goDDNS/config.
 
 example config.json file
 
+<pre>
 {
   "List": [
     {
@@ -33,6 +34,7 @@ example config.json file
   ],
   "Interval": 180
 }
+</pre>
 
 Interval is in seconds.
 
