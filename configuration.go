@@ -10,9 +10,9 @@ import (
 )
 
 type configuration struct {
-	List         []*domain
-	Interval     time.Duration
-	LogPath      string
+	List     []*domain
+	Interval time.Duration
+	LogPath  string
 }
 
 func (c *configuration) parseConfig(path string) {
@@ -59,5 +59,5 @@ func (c *configuration) getPublicIP() (string, error) {
 }
 
 func (c *configuration) log(v ...interface{}) {
-	logger.println(append([]interface{}{"--> global -/"}, v...))
+	logger.println(append([]interface{}{"--> global -/"}, v...)...)
 }
