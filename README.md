@@ -1,7 +1,9 @@
 # goDDNS
 DDNS client written in go!!
 
-working on adding more support for protocols, only supports namecheap atm.
+ONLY FOR NAMECHEAP AT THE MOMOENT BUT VERY EASY TO EXTEND.
+
+Just add the protocol support in domain.useProtocol() and domain.checkError() methods.
 
 ##Install
 install with
@@ -37,5 +39,3 @@ example config.json file
 </pre>
 
 Interval is in seconds.
-
-Very easy to extend, just add the protocol support in domain.useProtocol() and domain.checkError() methods.

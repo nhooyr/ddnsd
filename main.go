@@ -9,20 +9,41 @@ import (
 
 //TODO MORE PROTOCOLS
 
+// global filelogger
+var logger *fileLogger
+
 func main() {
-	log.SetPrefix("goDDNS: ")
-	var path string
-	flag.StringVar(&path, "c", "/usr/local/etc/goDDNS/config.json", "path to configuration file")
+	// flag variables
+	var (
+		stderr, errPrefix bool
+		config     string
+	)
+	flag.BoolVar(&stderr, "e", false, "stderr logging")
+	flag.BoolVar(&errPrefix, "t", false, "stderr logging prefix (name, timestamp)")
+	flag.StringVar(&config, "c", "/usr/local/etc/goDDNS/config.json", "path to configuration file")
 	flag.Parse()
-	dir, _ := filepath.Split(path)
+	dir, _ := filepath.Split(config)
 	if dir != "" {
 		if err := os.Chdir(dir); err != nil {
 			log.Fatalln("--> global -/", err)
 		}
 	}
-	c := &configuration{logInterface: make(chan []interface{})}
-	c.parseConfig(path)
-	go c.receiveAndLog()
+	c := new(configuration)
+	c.parseConfig(config)
+	logger = &fileLogger{stderr: stderr}
+	if errPrefix == false {
+		log.SetFlags(0)
+		log.SetPrefix("")
+	} else {
+		log.SetPrefix("cserver: ")
+	}
+	if c.LogPath != "" {
+		logFile, err := os.OpenFile(c.LogPath, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
+		if err != nil {
+			log.Fatal(err)
+		}
+		logger.Logger = log.New(logFile, "cserver: ", 3)
+	}
 	c.log("launching goroutines")
 	for _, d := range c.List {
 		d.getIP = make(chan string)

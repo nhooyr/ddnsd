@@ -1,12 +1,13 @@
 package main
 
 import (
-	"github.com/miekg/dns"
 	"io/ioutil"
 	"net/http"
 	"regexp"
-	"strings"
 	"strconv"
+	"strings"
+
+	"github.com/miekg/dns"
 )
 
 type domain struct {
@@ -92,11 +93,11 @@ func (d *domain) checkError(s string, r *http.Response) (bad bool) {
 				j := strings.Index(s, "</p>")
 				s = s[i+len("<p>") : j]
 			}
-			d.log("status code", strconv.Itoa(r.StatusCode) + "; could not update;", d.fqdn+";", s)
+			d.log("status code", strconv.Itoa(r.StatusCode)+"; could not update;", d.fqdn+";", s)
 		}
 	}
 	return
 }
 func (d *domain) log(v ...interface{}) {
-	d.c.logInterface <- append([]interface{}{"-->", d.Domain, "-/"}, v...)
+	logger.println(append([]interface{}{"-->", d.Domain, "-/"}, v...))
 }

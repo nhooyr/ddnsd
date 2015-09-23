@@ -12,8 +12,7 @@ import (
 type configuration struct {
 	List         []*domain
 	Interval     time.Duration
-	Logfile      string
-	logInterface chan []interface{}
+	LogPath      string
 }
 
 func (c *configuration) parseConfig(path string) {
@@ -59,29 +58,6 @@ func (c *configuration) getPublicIP() (string, error) {
 	return string(buf), nil
 }
 
-// receive on global log channel and append received to Logfile
-// if Logfile doesn't exist, create it, and check continuously
-// if it doesn't exist and if so create
-func (c *configuration) receiveAndLog() {
-	if c.Logfile != "" {
-		for {
-			logFile, err := os.OpenFile(c.Logfile, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
-			if err != nil {
-				log.Fatal(err)
-			}
-			defer logFile.Close()
-			log.SetOutput(logFile)
-			log.Println("--> global -/ beginning logging")
-			for {
-				if _, err = os.Stat(c.Logfile); os.IsNotExist(err) {
-					break
-				}
-				log.Println(<-c.logInterface...)
-			}
-		}
-	}
-}
-
 func (c *configuration) log(v ...interface{}) {
-	c.logInterface <- append([]interface{}{"--> global -/"}, v...)
+	logger.println(append([]interface{}{"--> global -/"}, v...))
 }
