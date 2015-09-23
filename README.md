@@ -6,7 +6,7 @@ working on adding more support for protocols, only supports namecheap atm.
 ##Install
 install with
 
-	go get -u github.com/aubble/goDDNS
+	go get github.com/aubble/goDDNS
 
 It'll be installed to $GOPATH/bin, just make sure its in your path and you can launch it with
 

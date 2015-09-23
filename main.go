@@ -12,7 +12,7 @@ import (
 func main() {
 	log.SetPrefix("goDDNS: ")
 	var path string
-	flag.StringVar(&path, "c", "/etc/goDDNS/config.json", "path to configuration file")
+	flag.StringVar(&path, "c", "/usr/local/etc/goDDNS/config.json", "path to configuration file")
 	flag.Parse()
 	dir, _ := filepath.Split(path)
 	if dir != "" {
