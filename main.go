@@ -35,7 +35,7 @@ func main() {
 		log.SetFlags(0)
 		log.SetPrefix("")
 	} else {
-		log.SetPrefix("cserver: ")
+		log.SetPrefix("ddnsd: ")
 	}
 	if c.LogPath != "" {
 		logFile, err := os.OpenFile(c.LogPath, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
