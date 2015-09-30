@@ -12,7 +12,7 @@ install with
 
 It'll be installed to $GOPATH/bin, just make sure its in your path and you can launch it with
 
-	ddnsd -c pathToConfigFIle
+	ddnsd -c pathToConfigFile
 
 if no -c flag is given, the default location it looks for is /etc/ddnsd/config.json
 
