@@ -20,7 +20,7 @@ func main() {
 	)
 	flag.BoolVar(&stderr, "e", false, "stderr logging")
 	flag.BoolVar(&errPrefix, "t", false, "stderr logging prefix (name, timestamp)")
-	flag.StringVar(&config, "c", "/usr/local/etc/goDDNS/config.json", "path to configuration file")
+	flag.StringVar(&config, "c", "/usr/local/etc/ddnsd/config.json", "path to configuration file")
 	flag.Parse()
 	dir, _ := filepath.Split(config)
 	if dir != "" {
