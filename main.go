@@ -16,7 +16,7 @@ func main() {
 	// flag variables
 	var (
 		stderr, errPrefix bool
-		config     string
+		config            string
 	)
 	flag.BoolVar(&stderr, "e", false, "stderr logging")
 	flag.BoolVar(&errPrefix, "t", false, "stderr logging prefix (name, timestamp)")

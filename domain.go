@@ -1,4 +1,5 @@
-package main 
+package main
+
 import (
 	"io/ioutil"
 	"net/http"
