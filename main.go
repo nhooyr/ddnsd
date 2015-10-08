@@ -13,6 +13,7 @@ import (
 var logger *fileLogger
 
 func main() {
+	log.SetPrefix("ddnsd: ")
 	// flag variables
 	var (
 		stderr, errPrefix bool
@@ -34,15 +35,13 @@ func main() {
 	if errPrefix == false {
 		log.SetFlags(0)
 		log.SetPrefix("")
-	} else {
-		log.SetPrefix("ddnsd: ")
 	}
 	if c.LogPath != "" {
 		logFile, err := os.OpenFile(c.LogPath, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
 		if err != nil {
 			log.Fatal(err)
 		}
-		logger.Logger = log.New(logFile, "cserver: ", 3)
+		logger.Logger = log.New(logFile, "ddnsd: ", 3)
 	}
 	c.log("launching goroutines")
 	for _, d := range c.List {
