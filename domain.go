@@ -99,5 +99,5 @@ func (d *domain) checkError(s string, r *http.Response) (bad bool) {
 	return
 }
 func (d *domain) log(v ...interface{}) {
-	logger.println(append([]interface{}{"-->", d.Domain, "-/"}, v...)...)
+	logger.println(append([]interface{}{"-->", d.Host + "." + d.Domain, "-/"}, v...)...)
 }
